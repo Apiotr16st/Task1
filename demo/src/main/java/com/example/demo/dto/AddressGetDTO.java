@@ -5,7 +5,7 @@ public record AddressGetDTO(
         String address,
         String address2,
         String district,
-        Integer cityId,
+        CityGetDTO city,
         String postalCode,
         String phone) {
 }

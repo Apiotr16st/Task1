@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.CityDTO;
+import com.example.demo.dto.CityGetDTO;
 import com.example.demo.dto.CityUpdateDTO;
+import com.example.demo.dto.CountryDTO;
 import com.example.demo.model.City;
 import com.example.demo.model.Country;
 import com.example.demo.repository.CityRepository;
@@ -26,12 +28,18 @@ public class CityService {
         this.countryRepository = countryRepository;
     }
 
-    public List<City> getAll() {
-        return cityRepository.findAll();
+    public List<CityGetDTO> getAll() {
+        List<City> cities = cityRepository.findAll();
+        return cities.stream().map(
+                c -> new CityGetDTO(c.getCityId(), c.getCity(),
+                        new CountryDTO(c.getCountry().getCountry()))).toList();
     }
 
-    public City getById(Integer id) {
-        return cityRepository.findById(id).orElseThrow(() ->  new EntityNotFoundException("cityId"));
+    public CityGetDTO getById(Integer id) {
+        City c = cityRepository.findById(id).orElseThrow(() ->  new EntityNotFoundException("cityId"));
+
+        return new CityGetDTO(c.getCityId(), c.getCity(),
+                new CountryDTO(c.getCountry().getCountry()));
     }
 
     public ResponseEntity<City> create(CityDTO newCity) {

@@ -8,7 +8,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface AddressMapper {
-    @Mapping(source = "city.cityId", target = "cityId")
     AddressGetDTO toGetDTO(Address address);
     @Mapping(target = "city", ignore = true)
     Address toEntity(AddressCreateDTO dto);

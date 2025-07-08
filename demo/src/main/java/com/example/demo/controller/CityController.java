@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.CityDTO;
+import com.example.demo.dto.CityGetDTO;
 import com.example.demo.dto.CityUpdateDTO;
 import com.example.demo.model.City;
 import com.example.demo.service.CityService;
@@ -20,12 +21,12 @@ public class CityController {
     }
 
     @GetMapping("/all")
-    public List<City> getCites(){
+    public List<CityGetDTO> getCites(){
         return cityService.getAll();
     }
 
     @GetMapping("/{id}")
-    public City getCityById(@PathVariable Integer  id){
+    public CityGetDTO getCityById(@PathVariable Integer  id){
         return cityService.getById(id);
     }
 

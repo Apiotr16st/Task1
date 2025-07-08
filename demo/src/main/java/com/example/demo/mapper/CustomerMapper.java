@@ -6,7 +6,7 @@ import com.example.demo.model.Customer;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {AddressMapper.class})
 public interface CustomerMapper {
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "activebool", constant = "true")

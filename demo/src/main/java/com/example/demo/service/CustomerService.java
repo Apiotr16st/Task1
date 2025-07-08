@@ -8,15 +8,19 @@ import com.example.demo.model.Address;
 import com.example.demo.model.Customer;
 import com.example.demo.repository.AddressRepository;
 import com.example.demo.repository.CustomerRepository;
+import com.example.demo.specification.CustomerSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomerService {
@@ -30,9 +34,68 @@ public class CustomerService {
         this.mapper = mapper;
     }
 
-    public List<CustomerGetDTO> getAll() {
-        List<Customer> customers = customerRepository.findAll();
-        return customers.stream()
+    public List<CustomerGetDTO> getAll(Map<String, String> filter, Pageable pageable) {
+        Map<String, String> sortMap = Map.of(
+                "city", "address.city.city",
+                "country", "address.city.country.country",
+                "lastname", "lastName",
+                "firstname", "firstName",
+                "email", "email");
+
+        Sort remappedSort = Sort.by(
+                pageable.getSort()
+                        .stream()
+                        .map(order -> {
+                            String actualField = sortMap.getOrDefault(order.getProperty().toLowerCase(), order.getProperty());
+                            return new Sort.Order(order.getDirection(), actualField)
+                                    .ignoreCase()
+                                    .with(order.getNullHandling());
+                        })
+                        .toList()
+        );
+        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), remappedSort);
+
+        Set<String> keys = Set.of("firstname", "lastname", "email", "city", "country", "status");
+        String search = filter.getOrDefault("search", "");
+
+        Specification<Customer> spec = new CustomerSpecification(search);
+
+        filter = filter.entrySet()
+                .stream()
+                .filter(e-> keys.contains(e.getKey().toLowerCase()))
+                .collect(Collectors
+                        .toMap(e -> e.getKey().toLowerCase(), Map.Entry::getValue)
+                );
+
+        if(!filter.isEmpty()){
+            if (filter.containsKey("firstname"))
+                spec = spec.and(CustomerSpecification.hasFirstName(filter.get("firstname")));
+
+            else if (filter.containsKey("lastname"))
+                spec = spec.and(CustomerSpecification.hasLastName(filter.get("lastname")));
+
+            else if (filter.containsKey("email"))
+                spec = spec.and(CustomerSpecification.hasEmail(filter.get("email")));
+
+            else if (filter.containsKey("city"))
+                spec = spec.and(CustomerSpecification.hasCity(filter.get("city")));
+
+            else if (filter.containsKey("country"))
+                spec = spec.and(CustomerSpecification.hasCountry(filter.get("country")));
+
+            else if (filter.containsKey("status")) {
+                String value = filter.get("status");
+                if (!value.equalsIgnoreCase("active") && !value.equalsIgnoreCase("inactive"))
+                    throw new DataIntegrityViolationException("Use value: active or inactive");
+                if(value.equalsIgnoreCase("active"))
+                    spec = spec.and(CustomerSpecification.hasStatus(true));
+                else
+                    spec = spec.and(CustomerSpecification.hasStatus(false));
+            }
+        }
+
+        return customerRepository.findAll(spec, pageable).getContent()
+                .stream()
                 .map(mapper::toGetDTO)
                 .toList();
     }
