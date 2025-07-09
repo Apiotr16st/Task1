@@ -1,6 +1,6 @@
 package com.example.demo.dto;
 
-import com.example.demo.model.Address;
+import com.example.demo.util.LogParser;
 import jakarta.validation.constraints.*;
 
 public record CustomerUpdateDTO(
@@ -20,4 +20,18 @@ public record CustomerUpdateDTO(
 
                                  Integer active,
 
-                                Boolean activebool) {}
+                                Boolean activebool) {
+
+    @Override
+    public String toString() {
+        return "CustomerUpdateDTO[" +
+                "storeId=" + storeId + ", " +
+                "firstName='" + firstName + "', " +
+                "lastName='" + lastName + "', " +
+                "email='" + LogParser.encodeEmail(email) + "', " +
+                "addressId=" + addressId + ", " +
+                "active=" + active + "," +
+                "activebool" + activebool +
+                "]";
+    }
+}

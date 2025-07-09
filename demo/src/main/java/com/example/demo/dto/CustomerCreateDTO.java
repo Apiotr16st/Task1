@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import com.example.demo.util.LogParser;
 import jakarta.validation.constraints.*;
 
 public record CustomerCreateDTO(
@@ -29,4 +30,16 @@ public record CustomerCreateDTO(
         @Min(value = 0, message = "active must be one of {0, 1}")
         @Max(value = 1, message = "active must be one of {0, 1}")
         Integer active) {
+
+        @Override
+        public String toString() {
+                return "CustomerCreateDTO[" +
+                        "storeId=" + storeId + ", " +
+                        "firstName='" + firstName + "', " +
+                        "lastName='" + lastName + "', " +
+                        "email='" + LogParser.encodeEmail(email) + "', " +
+                        "addressId=" + addressId + ", " +
+                        "active=" + active +
+                        "]";
+        }
 }
