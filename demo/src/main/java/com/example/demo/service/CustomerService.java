@@ -76,15 +76,17 @@ public class CustomerService {
                 );
 
         if(!filter.isEmpty()){
-            spec = switch (filter.keySet().iterator().next().toLowerCase()){
-                case "firstname" -> spec.and(CustomerSpecification.hasFirstName(filter.get("firstname")));
-                case "lastname" -> spec.and(CustomerSpecification.hasLastName(filter.get("lastname")));
-                case "email" -> spec.and(CustomerSpecification.hasEmail(filter.get("email")));
-                case "city" -> spec.and(CustomerSpecification.hasCity(filter.get("city")));
-                case "country" -> spec.and(CustomerSpecification.hasCountry(filter.get("country")));
-                case "status" -> spec.and(CustomerSpecification.hasStatus(parseStatus(filter.get("status"))));
-                default -> spec;
-            };
+            for (String fil: filter.keySet()) {
+                spec = switch (fil) {
+                    case "firstname" -> spec.and(CustomerSpecification.hasFirstName(filter.get("firstname")));
+                    case "lastname" -> spec.and(CustomerSpecification.hasLastName(filter.get("lastname")));
+                    case "email" -> spec.and(CustomerSpecification.hasEmail(filter.get("email")));
+                    case "city" -> spec.and(CustomerSpecification.hasCity(filter.get("city")));
+                    case "country" -> spec.and(CustomerSpecification.hasCountry(filter.get("country")));
+                    case "status" -> spec.and(CustomerSpecification.hasStatus(parseStatus(filter.get("status"))));
+                    default -> spec;
+                };
+            }
         }
         return spec;
     }
