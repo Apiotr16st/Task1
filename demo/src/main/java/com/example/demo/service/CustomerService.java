@@ -3,7 +3,6 @@ package com.example.demo.service;
 import com.example.demo.dto.CustomerCreateDTO;
 import com.example.demo.dto.CustomerGetDTO;
 import com.example.demo.dto.CustomerUpdateDTO;
-import com.example.demo.dto.GenderDTO;
 import com.example.demo.mapper.CustomerMapper;
 import com.example.demo.model.Address;
 import com.example.demo.model.Customer;
@@ -32,12 +31,14 @@ public class CustomerService {
     private final AddressRepository addressRepository;
     private final CustomerMapper mapper;
     private final GenderService genderService;
+    private final EmailService emailService;
 
-    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper, GenderService genderService) {
+    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper, GenderService genderService, EmailService emailService) {
         this.customerRepository = customerRepository;
         this.addressRepository = addressRepository;
         this.mapper = mapper;
         this.genderService = genderService;
+        this.emailService = emailService;
     }
 
     public Page<CustomerGetDTO> getAll(Map<String, String> filter, Pageable pageable) {
@@ -115,13 +116,18 @@ public class CustomerService {
             throw new DataIntegrityViolationException("Email is already taken");
         }
 
+        if (emailService.validateEmail(dto.email())){
+            throw new DataIntegrityViolationException("Email is disposable");
+        }
+
         if (dto.firstName().isEmpty() || dto.lastName().isEmpty() || dto.email().isEmpty()) {
             throw new DataIntegrityViolationException("Name and email cannot be empty");
         }
 
-        GenderDTO genderDTO = genderService.getGender(dto.firstName());
         Customer customer = mapper.toEntity(dto);
-        customer.setGender(Gender.fromString(genderDTO.gender()));
+
+        String gender = genderService.getGender(dto.firstName());
+        customer.setGender(Gender.fromString(gender));
 
         Address address = addressRepository.findById(dto.addressId())
                 .orElseThrow(() -> new EntityNotFoundException("addressId"));

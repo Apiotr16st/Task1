@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.GenderDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -12,11 +11,14 @@ public class GenderService {
         this.webClient = webClientBuilder.baseUrl("https://api.genderize.io").build();
     }
 
-    public GenderDTO getGender(String name) {
+    private record Gender(String name, String gender, double probability, int count) {}
+
+    public String getGender(String name) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.queryParam("name", name).build())
                 .retrieve()
-                .bodyToMono(GenderDTO.class)
+                .bodyToMono(Gender.class)
+                .map(Gender::gender)
                 .block();
     }
 }
