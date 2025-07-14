@@ -3,9 +3,11 @@ package com.example.demo.service;
 import com.example.demo.dto.CustomerCreateDTO;
 import com.example.demo.dto.CustomerGetDTO;
 import com.example.demo.dto.CustomerUpdateDTO;
+import com.example.demo.dto.GenderDTO;
 import com.example.demo.mapper.CustomerMapper;
 import com.example.demo.model.Address;
 import com.example.demo.model.Customer;
+import com.example.demo.model.Gender;
 import com.example.demo.repository.AddressRepository;
 import com.example.demo.repository.CustomerRepository;
 import com.example.demo.specification.CustomerSpecification;
@@ -20,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,11 +31,13 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final AddressRepository addressRepository;
     private final CustomerMapper mapper;
+    private final GenderService genderService;
 
-    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper) {
+    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper, GenderService genderService) {
         this.customerRepository = customerRepository;
         this.addressRepository = addressRepository;
         this.mapper = mapper;
+        this.genderService = genderService;
     }
 
     public Page<CustomerGetDTO> getAll(Map<String, String> filter, Pageable pageable) {
@@ -114,7 +119,9 @@ public class CustomerService {
             throw new DataIntegrityViolationException("Name and email cannot be empty");
         }
 
+        GenderDTO genderDTO = genderService.getGender(dto.firstName());
         Customer customer = mapper.toEntity(dto);
+        customer.setGender(Gender.fromString(genderDTO.gender()));
 
         Address address = addressRepository.findById(dto.addressId())
                 .orElseThrow(() -> new EntityNotFoundException("addressId"));
