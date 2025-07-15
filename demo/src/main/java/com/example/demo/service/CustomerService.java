@@ -3,14 +3,14 @@ package com.example.demo.service;
 import com.example.demo.dto.CustomerCreateDTO;
 import com.example.demo.dto.CustomerGetDTO;
 import com.example.demo.dto.CustomerUpdateDTO;
+import com.example.demo.exception.*;
 import com.example.demo.mapper.CustomerMapper;
 import com.example.demo.model.Address;
 import com.example.demo.model.Customer;
+import com.example.demo.model.Gender;
 import com.example.demo.repository.AddressRepository;
 import com.example.demo.repository.CustomerRepository;
 import com.example.demo.specification.CustomerSpecification;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,11 +29,15 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final AddressRepository addressRepository;
     private final CustomerMapper mapper;
+    private final GenderService genderService;
+    private final EmailService emailService;
 
-    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper) {
+    public CustomerService(CustomerRepository customerRepository, AddressRepository addressRepository, CustomerMapper mapper, GenderService genderService, EmailService emailService) {
         this.customerRepository = customerRepository;
         this.addressRepository = addressRepository;
         this.mapper = mapper;
+        this.genderService = genderService;
+        this.emailService = emailService;
     }
 
     public Page<CustomerGetDTO> getAll(Map<String, String> filter, Pageable pageable) {
@@ -95,29 +100,40 @@ public class CustomerService {
         return switch (value.toLowerCase()) {
             case "active" -> true;
             case "inactive" -> false;
-            default -> throw new DataIntegrityViolationException("Use value: active or inactive");
+            default -> throw new InvalidFormatException(ErrorCode.INVALID_ACTIVE_FILTER_FORMAT);
         };
     }
 
     public CustomerGetDTO getById(Integer id) {
-        Customer customer = customerRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("customerId"));
+        Customer customer = customerRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.CUSTOMER_ID_NOT_FOUND.format(id)));
         return mapper.toGetDTO(customer);
     }
 
     public ResponseEntity<CustomerGetDTO> create(CustomerCreateDTO dto) {
 
-        if (customerRepository.findByEmail(dto.email()).isPresent()) {
-            throw new DataIntegrityViolationException("Email is already taken");
-        }
+        if (customerRepository.findByEmail(dto.email()).isPresent())
+            throw new EntityExistsException(ErrorCode.EMAIL_EXISTS.format(dto.email()));
 
-        if (dto.firstName().isEmpty() || dto.lastName().isEmpty() || dto.email().isEmpty()) {
-            throw new DataIntegrityViolationException("Name and email cannot be empty");
-        }
+        if(dto.firstName().isEmpty())
+            throw new EmptyInputException(ErrorCode.EMPTY_FIRST_NAME);
+
+        if(dto.lastName().isEmpty())
+            throw new EmptyInputException(ErrorCode.EMPTY_LAST_NAME);
+
+        if(dto.email().isEmpty())
+            throw new EmptyInputException(ErrorCode.EMPTY_EMAIL);
+
+        if (emailService.validateEmail(dto.email()))
+            throw new DisposableEmailException(ErrorCode.EMAIL_IS_DISPOSABLE.format(dto.email()));
 
         Customer customer = mapper.toEntity(dto);
 
-        Address address = addressRepository.findById(dto.addressId())
-                .orElseThrow(() -> new EntityNotFoundException("addressId"));
+        String gender = genderService.getGender(dto.firstName());
+        customer.setGender(Gender.fromString(gender));
+
+        Address address = addressRepository.findById(dto.addressId()).orElseThrow(() ->
+                        new NotFoundException(ErrorCode.ADDRESS_ID_NOT_FOUND.format(dto.addressId())));
 
         customer.setAddress(address);
 
@@ -130,58 +146,51 @@ public class CustomerService {
 
 
     public ResponseEntity<Customer> delete(Integer id) {
-        Optional<Customer> customer = customerRepository.findById(id);
-        if(customer.isPresent()){
-            customerRepository.delete(customer.get());
-            return ResponseEntity.ok().build();      }
-        else{
-            throw new EntityNotFoundException("customerId");
-        }
+        Customer customer = customerRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.CUSTOMER_ID_NOT_FOUND.format(id)));
+        customerRepository.delete(customer);
+        return ResponseEntity.ok().build();
     }
 
     public ResponseEntity<CustomerGetDTO> update(Integer id, CustomerUpdateDTO dto) {
-        Optional<Customer> optCustomer = customerRepository.findById(id);
-        if(optCustomer.isPresent()){
-            Customer customer = optCustomer.get();
-            if(dto.storeId() != null && dto.storeId() >= 0)
-                customer.setStoreId(dto.storeId());
+        Customer customer = customerRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.CUSTOMER_ID_NOT_FOUND.format(id)));
 
-            if(dto.firstName() != null && !dto.firstName().isEmpty())
-                customer.setFirstName(dto.firstName());
+        if(dto.storeId() != null && dto.storeId() >= 0)
+            customer.setStoreId(dto.storeId());
 
-            if(dto.lastName() != null && !dto.lastName().isEmpty())
-                customer.setLastName(dto.lastName());
+        if(dto.firstName() != null && !dto.firstName().isEmpty())
+            customer.setFirstName(dto.firstName());
 
-            if(dto.email() != null && !dto.email().isEmpty()) {
-                if (customerRepository.findByEmail(dto.email()).isPresent() && !dto.email().equals(customer.getEmail())) {
-                    throw new DataIntegrityViolationException("Wrong email");
-                }
-                customer.setEmail(dto.email());
+        if(dto.lastName() != null && !dto.lastName().isEmpty())
+            customer.setLastName(dto.lastName());
+
+        if(dto.email() != null && !dto.email().isEmpty()) {
+            if (customerRepository.findByEmail(dto.email()).isPresent()) {
+                throw new EntityExistsException(ErrorCode.EMAIL_EXISTS.format(dto.email()));
             }
-
-            if(dto.addressId() != null) {
-                Address address = addressRepository.findById(dto.addressId()).orElseThrow(() -> new EntityNotFoundException("addressId"));
-                customer.setAddress(address);
-            }
-
-            if(dto.active() != null)
-            {
-                if (dto.active() == 0 || dto.active() == 1)
-                    customer.setActive(dto.active());
-                else
-                    throw new DataIntegrityViolationException("active must be 0 or 1");
-            }
-
-            if(dto.activebool() != null)
-                customer.setActivebool(dto.activebool());
-
-            customer.setLastUpdate(new Date());
-
-            Customer saved = customerRepository.save(customer);
-            return ResponseEntity.ok().body(mapper.toGetDTO(saved));
+            customer.setEmail(dto.email());
         }
-        else{
-            throw new EntityNotFoundException("customerId");
+
+        if(dto.addressId() != null) {
+            Address address = addressRepository.findById(dto.addressId()).orElseThrow(() ->
+                    new NotFoundException(ErrorCode.ADDRESS_ID_NOT_FOUND.format(dto.addressId())));
+            customer.setAddress(address);
         }
+
+        if(dto.active() != null) {
+            if (dto.active() == 0 || dto.active() == 1)
+                customer.setActive(dto.active());
+            else
+                throw new InvalidFormatException(ErrorCode.INVALID_ACTIVE_FORMAT);
+        }
+
+        if(dto.activebool() != null)
+            customer.setActivebool(dto.activebool());
+
+        customer.setLastUpdate(new Date());
+
+        Customer saved = customerRepository.save(customer);
+        return ResponseEntity.ok().body(mapper.toGetDTO(saved));
     }
 }

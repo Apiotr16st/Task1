@@ -2,16 +2,16 @@ package com.example.demo.service;
 
 import com.example.demo.dto.CountryDTO;
 import com.example.demo.dto.CountryUpdateDTO;
+import com.example.demo.exception.ErrorCode;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.model.Country;
 import com.example.demo.repository.CountryRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CountryService {
@@ -26,7 +26,8 @@ public class CountryService {
     }
 
     public Country getById(Integer  id) {
-        return countryRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("cityId"));
+        return countryRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.CITY_ID_NOT_FOUND.format(id)));
     }
 
     public ResponseEntity<Country> create(CountryDTO newCountry) {
@@ -40,20 +41,17 @@ public class CountryService {
     }
 
     public ResponseEntity<Country> update(Integer  id, CountryUpdateDTO dto) {
-        Country country = countryRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("countryId"));
+        Country country = countryRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.COUNTRY_ID_NOT_FOUND.format(id)));
         country.setCountry(dto.country());
         Country saved = countryRepository.save(country);
         return ResponseEntity.ok().body(saved);
     }
 
     public ResponseEntity<Country> delete(Integer  id) {
-        Optional<Country> country = countryRepository.findById(id);
-        if(country.isPresent()){
-            countryRepository.delete(country.get());
-            return ResponseEntity.ok().build();
-        }
-        else{
-            throw new EntityNotFoundException("countryId");
-        }
+        Country country = countryRepository.findById(id).orElseThrow(() ->
+                new NotFoundException(ErrorCode.COUNTRY_ID_NOT_FOUND));
+        countryRepository.delete(country);
+        return ResponseEntity.ok().build();
     }
 }
