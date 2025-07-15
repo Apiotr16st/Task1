@@ -1,9 +1,7 @@
 package com.example.demo.exception;
 
 import com.example.demo.dto.ErrorDTO;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,16 +15,12 @@ import java.util.Map;
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorDTO> handleNotFound(EntityNotFoundException ex) {
-        log.error("Entity not found. Wrong: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorDTO("Wrong " + ex.getMessage(), LocalDateTime.now()));
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorDTO> handleDataIntegrity(DataIntegrityViolationException ex) {
-        log.error("Bad request: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDTO(ex.getMessage(), LocalDateTime.now()));
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<ErrorDTO> handleException(AppException ex){
+        log.error("ERROR {} {}", ex.getErrorCode(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorDTO(ex.getErrorCode().code(),ex.getErrorCode().message(), LocalDateTime.now()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
