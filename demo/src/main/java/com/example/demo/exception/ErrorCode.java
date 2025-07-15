@@ -14,7 +14,8 @@ public enum ErrorCode {
     CUSTOMER_ID_NOT_FOUND(200,"Customer with ID %d not found"),
     ADDRESS_ID_NOT_FOUND(201, "Address with ID %d not found"),
     CITY_ID_NOT_FOUND(202, "City with ID %d not found"),
-    COUNTRY_ID_NOT_FOUND(203, "Country with ID %d not found");
+    COUNTRY_ID_NOT_FOUND(203, "Country with ID %d not found"),
+    ARGUMENT_NOT_VALID(204, "");
 
     private final int code;
     private String message;
