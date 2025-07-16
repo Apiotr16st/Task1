@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.RentFilmDTO;
-import com.example.demo.exception.EntityExistsException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.exception.InventoryRentedException;
 import com.example.demo.exception.NotFoundException;
