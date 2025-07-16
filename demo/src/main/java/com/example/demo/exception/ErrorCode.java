@@ -10,12 +10,15 @@ public enum ErrorCode {
     INVALID_ACTIVE_FILTER_FORMAT(106, "Invalid format, use value: active / inactive"),
     INVALID_ACTIVE_FORMAT(107, "Invalid input, active must be 0 or 1"),
     ADDRESS_RECORD_EXISTS(108, "Record with such fields already exists"),
+    INVENTORY_IS_RENTED(109, "Inventory is already rented"),
 
     CUSTOMER_ID_NOT_FOUND(200,"Customer with ID %d not found"),
     ADDRESS_ID_NOT_FOUND(201, "Address with ID %d not found"),
     CITY_ID_NOT_FOUND(202, "City with ID %d not found"),
     COUNTRY_ID_NOT_FOUND(203, "Country with ID %d not found"),
-    ARGUMENT_NOT_VALID(204, "");
+    ARGUMENT_NOT_VALID(204, ""),
+    INVENTORY_ID_NOT_FOUND(205, "Inventory with ID %d not found"),
+    RENTAL_ID_NOT_FOUND(206,"Rental with ID %d not found");
 
     private final int code;
     private String message;
