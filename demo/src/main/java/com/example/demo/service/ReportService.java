@@ -48,6 +48,7 @@ public class ReportService {
             SaveToFile.save("report" + LocalDate.now() + ".txt",toReport);
             log.info("GENERATED REPORT TO FILE: report{}.txt", LocalDate.now());
         } catch (IOException e) {
+            log.info("ERROR DURING GENERATING REPORT");
             throw new RuntimeException(e);
         }
     }

@@ -18,13 +18,13 @@ public class RentalController {
 
     @PostMapping
     public ResponseEntity<Object> rentFilm(@RequestBody RentFilmDTO rent){
-        log.info("rent");
+        log.info("POST /rental");
         return rentalService.rentFilm(rent);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> returnFilm(@PathVariable Integer id){
-        log.info("return");
+        log.info("PUT /rental/{}",id);
         return rentalService.returnFilm(id);
     }
 }
