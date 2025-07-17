@@ -13,7 +13,7 @@ public class Scheduler {
         this.reportService = reportService;
     }
 
-    @Scheduled(cron = "0 0 7 ? * MON", zone="Europe/Warsaw")
+    @Scheduled(cron = "15 31 16 ? * *", zone="Europe/Warsaw")
     public void customersWithUnreturnedFilms(){
         reportService.generateReport();
     }

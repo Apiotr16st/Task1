@@ -5,11 +5,10 @@ import com.example.demo.model.Customer;
 import com.example.demo.model.Rental;
 import com.example.demo.repository.CustomerRepository;
 import com.example.demo.repository.RentalRepository;
-import com.example.demo.util.SaveToFile;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -21,16 +20,18 @@ import java.util.Optional;
 public class ReportService {
     private final CustomerRepository customerRepository;
     private final RentalRepository rentalRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private static final String TOPIC_NAME = "report-topic";
 
-    public ReportService(CustomerRepository customerRepository, RentalRepository rentalRepository) {
+    public ReportService(CustomerRepository customerRepository, RentalRepository rentalRepository, KafkaTemplate<String, String> kafkaTemplate) {
         this.customerRepository = customerRepository;
         this.rentalRepository = rentalRepository;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     public void generateReport() {
         LocalDate today = LocalDate.now();
-
-        List<String> toReport = customerRepository.findNullReturnedDate()
+        customerRepository.findNullReturnedDate()
                 .stream()
                 .map(c ->
                         new CustomerUnreturnedDTO(
@@ -43,14 +44,7 @@ public class ReportService {
                                         today)))
                 .filter(c -> c.delay() > 7)
                 .map(Record::toString)
-                .toList();
-        try {
-            SaveToFile.save("report" + LocalDate.now() + ".txt",toReport);
-            log.info("GENERATED REPORT TO FILE: report{}.txt", LocalDate.now());
-        } catch (IOException e) {
-            log.info("ERROR DURING GENERATING REPORT");
-            throw new RuntimeException(e);
-        }
+                .forEach(reportEntry -> kafkaTemplate.send(TOPIC_NAME, reportEntry));
     }
 
     public void deleteUnactiveClinets() {
