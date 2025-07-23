@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -7,9 +8,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class EmailService {
     private final WebClient webClient;
 
-    public EmailService(WebClient.Builder webClientBuilder) {
+    public EmailService(WebClient.Builder webClientBuilder, @Value("${email.validation.api}") String apiUrl) {
         this.webClient = webClientBuilder
-                .baseUrl("https://www.disify.com")
+                .baseUrl(apiUrl)
                 .build();
     }
 
@@ -17,7 +18,7 @@ public class EmailService {
 
     public Boolean validateEmail(String email) {
         return webClient.get()
-                .uri("/api/email/" + email)
+                .uri(email)
                 .retrieve()
                 .bodyToMono(Email.class)
                 .map(Email::disposable)
