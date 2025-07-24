@@ -19,8 +19,9 @@ public class Inventory {
     @Column(name = "inventory_id")
     private Integer inventoryId;
 
-    @Column(name = "film_id", nullable = false)
-    private Short filmId;
+    @ManyToOne
+    @JoinColumn(name = "film_id")
+    private Film film;
 
     @Column(name = "store_id", nullable = false)
     private Short storeId;
