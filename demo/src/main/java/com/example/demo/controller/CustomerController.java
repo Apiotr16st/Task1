@@ -5,7 +5,6 @@ import com.example.demo.dto.CustomerGetDTO;
 import com.example.demo.dto.CustomerUpdateDTO;
 import com.example.demo.model.Customer;
 import com.example.demo.service.CustomerService;
-import com.example.demo.util.LogParser;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,7 +35,6 @@ public class CustomerController {
     @GetMapping("/{id}")
     public CustomerGetDTO getCustomer(@PathVariable Integer id){
         log.info("GET /customer/{}", id);
-        System.out.println(LogParser.encodeEmail(customerService.getById(id).email()));
         return customerService.getById(id);
     }
 

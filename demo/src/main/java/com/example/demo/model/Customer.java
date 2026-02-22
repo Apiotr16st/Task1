@@ -45,4 +45,8 @@ public class Customer {
     private Date lastUpdate;
 
     private Integer active;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
+    private Gender gender;
 }
