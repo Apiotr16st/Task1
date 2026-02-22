@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -7,8 +8,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class GenderService {
     private final WebClient webClient;
 
-    public GenderService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("https://api.genderize.io").build();
+    public GenderService(WebClient.Builder webClientBuilder, @Value("${gender.api}") String apiUrl) {
+        this.webClient = webClientBuilder.baseUrl(apiUrl).build();
     }
 
     private record Gender(String name, String gender, double probability, int count) {}

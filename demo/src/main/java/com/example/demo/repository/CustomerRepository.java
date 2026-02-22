@@ -5,8 +5,10 @@ import com.example.demo.model.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,35 +17,34 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer>, Jp
     Optional<Customer> findByEmail(String email);
 
     @Query(value = """
-        SELECT
-            c.first_name AS firstName,
-            c.last_name AS lastName,
-            c.email AS email,
-            f.title AS filmTitle,
-            r.rental_date
-        FROM rental r
-        JOIN customer c ON c.customer_id = r.customer_id
-        JOIN inventory i ON i.inventory_id = r.inventory_id
-        JOIN film f ON f.film_id = i.film_id
-        WHERE r.return_date IS NULL
-    """, nativeQuery = true)
-    List<CustomerQueryDTO> findNullReturnedDate();
+        SELECT DISTINCT new com.example.demo.dto.CustomerQueryDTO(c.customerId, c.firstName, c.lastName, c.email, f.title, r.rentalDate)
+        FROM Rental r
+        JOIN r.customer c
+        JOIN r.inventory i
+        JOIN i.film f
+        WHERE r.returnDate IS NULL
+        AND r.rentalDate <= :weekAgo
+    """)
+    List<CustomerQueryDTO> findNullReturnedDate(@Param("weekAgo") LocalDateTime weekAgo);
 
-    @Query(value = """
-        SELECT *
-        FROM customer c
+    @Query("""
+        SELECT new com.example.demo.dto.CustomerQueryDTO(
+            c.customerId,
+            c.firstName,
+            c.lastName,
+            c.email,
+            c.email,
+            MAX(r.returnDate)
+        )
+        FROM Rental r
+        JOIN r.customer c
         WHERE c.activebool = true
-          AND EXISTS (
-              SELECT 1
-              FROM rental r
-              WHERE r.customer_id = c.customer_id
-          )
           AND NOT EXISTS (
-              SELECT 1
-              FROM rental r
-              WHERE r.customer_id = c.customer_id
-                AND r.return_date IS NULL
+              SELECT 1 FROM Rental r2
+              WHERE r2.customer = c AND r2.returnDate IS NULL
           )
-    """, nativeQuery = true)
-    List<Customer> findActiveUsersWithNoFilmsLeftToReturn();
+        GROUP BY c.customerId, c.firstName, c.lastName, c.email
+        HAVING MAX(r.returnDate) < :monthAgo
+    """)
+    List<CustomerQueryDTO> findActiveUsersWithNoFilmsLeftToReturn(@Param("monthAgo") LocalDateTime monthAgo);
 }
